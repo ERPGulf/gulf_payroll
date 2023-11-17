@@ -118,6 +118,9 @@ app_license = "mit"
 #	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 
+override_doctype_class = {
+	"Leave Encashment": "gulf_payroll.gulf_payroll.Leave Encashment.LeaveEncashment_new"
+}
 # Document Events
 # ---------------
 # Hook on document methods and events
