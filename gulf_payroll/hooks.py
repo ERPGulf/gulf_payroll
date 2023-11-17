@@ -222,3 +222,11 @@ override_doctype_class = {
 # auth_hooks = [
 #	"gulf_payroll.auth.validate"
 # ]
+fixtures=[{ "dt":"Property Setter" ,"filters":[[
+                "name", "in",[
+                    "Leave Allocation-from_date-fetch_from",] ]] 
+           }]
+fixtures=[{ "dt":"Property Setter" ,"filters":[[
+                "name", "in",[
+                    "Leave Allocation-to_date-default","Leave Allocation-from_date-fetch_from"] ]] 
+           }]
