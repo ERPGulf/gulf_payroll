@@ -118,9 +118,20 @@ app_license = "mit"
 #	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 
+# override_doctype_class = {
+# 	"Leave Encashment": "gulf_payroll.gulf_payroll.Leave Encashment.LeaveEncashment_new"
+# }
+
 override_doctype_class = {
-	"Leave Encashment": "gulf_payroll.gulf_payroll.Leave Encashment.LeaveEncashment_new"
+	"Gratuity": "gulf_payroll.gulf_payroll.gratuity_new.Gratuity_new",
+    "Leave Encashment": "gulf_payroll.gulf_payroll.Leave Encashment_new.LeaveEncashment_new"
 }
+
+override_whitelisted_methods = {
+    "hrms.payroll.doctype.gratuity.gratuity.calculate_work_experience_and_amount": "gulf_payroll.gulf_payroll.gratuity_new.calculate_work_experience_and_amount",
+   
+}
+
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -222,11 +233,9 @@ override_doctype_class = {
 # auth_hooks = [
 #	"gulf_payroll.auth.validate"
 # ]
-fixtures=[{ "dt":"Property Setter" ,"filters":[[
-                "name", "in",[
-                    "Leave Allocation-from_date-fetch_from",] ]] 
-           }]
+
 fixtures=[{ "dt":"Property Setter" ,"filters":[[
                 "name", "in",[
                     "Leave Allocation-to_date-default","Leave Allocation-from_date-fetch_from"] ]] 
            }]
+fixtures = [ {"dt": "Custom Field","filters": [["module", "=", "Gulf Payroll"]] }]
