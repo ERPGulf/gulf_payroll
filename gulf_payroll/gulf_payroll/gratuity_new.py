@@ -11,7 +11,6 @@ from frappe.utils import flt, get_datetime, get_link_to_form
 from hrms.payroll.doctype.gratuity.gratuity import get_gratuity_rule_slabs
 from erpnext.accounts.general_ledger import make_gl_entries
 from erpnext.controllers.accounts_controller import AccountsController
-# #  "erpnext.controllers.taxes_and_totals.calculate_taxes_and_totals": "test_app.override.Calculating_amount"
 from hrms.payroll.doctype.gratuity.gratuity import Gratuity
 from hrms.payroll.doctype.gratuity.gratuity import calculate_work_experience
 from frappe.model.document import Document
@@ -21,6 +20,12 @@ class Gratuity_new(AccountsController):
         self.current_work_experience = data["current_work_experience"]
         self.amount = data["amount"]
         self.set_status()
+        
+    def on_submit(self):
+        if self.pay_via_salary_slip:
+            Gratuity.create_additional_salary(self)
+        else:
+            Gratuity.create_gl_entries()
  
 @frappe.whitelist()
 def calculate_work_experience_and_amount(employee, gratuity_rule):
@@ -30,11 +35,10 @@ def calculate_work_experience_and_amount(employee, gratuity_rule):
 	return {"current_work_experience": current_work_experience, "amount": gratuity_amount}
 
 def calculate_gratuity_amount(employee, experience):
-        frappe.msgprint("inside calculate")
+       
         gratuity_amount = 0
         year_left = experience
         gratuity_amount =calculate_amount_based_on_current_slab(experience,employee)
-                
         return gratuity_amount
 
 
@@ -57,7 +61,7 @@ def calculate_amount_based_on_current_slab(experience,employee):
         one_day2=json.dumps(one_day)
         frappe.msgprint("one day salary:" +one_day2)
         if experience >= 5:
-        #  if experience >= from_year and (to_year == 0 or experience < to_year):
+    
             gratuity_amount = (
             28* experience * one_day
             )
@@ -65,10 +69,6 @@ def calculate_amount_based_on_current_slab(experience,employee):
             gratuity_amount = (
             21* experience * one_day
             )
-            # gratuity_amount = (
-            # 	total_applicable_components_amount * experience * fraction_of_applicable_earnings
-            # )
-            
-
+          
         return  gratuity_amount
 

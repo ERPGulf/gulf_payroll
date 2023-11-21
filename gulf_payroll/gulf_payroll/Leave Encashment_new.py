@@ -28,7 +28,7 @@ class LeaveEncashment_new(Document):
 	
 	def on_submit(self):
 		if not self.leave_allocation:
-			self.leave_allocation = LeaveEncashment.get_leave_allocation().get("name")
+			self.leave_allocation = self.get_leave_allocation().get("name")
 		additional_salary = frappe.new_doc("Additional Salary")
 		additional_salary.company = frappe.get_value("Employee", self.employee, "company")
 		additional_salary.employee = self.employee
@@ -68,7 +68,27 @@ class LeaveEncashment_new(Document):
 				- self.encashable_days,
 			)
 		LeaveEncashment.create_leave_ledger_entry(self,submit=False)
+	def get_leave_allocation(self):
+		date = self.encashment_date or getdate()
 
+		LeaveAllocation = frappe.qb.DocType("Leave Allocation")
+		leave_allocation = (
+			frappe.qb.from_(LeaveAllocation)
+			.select(
+				LeaveAllocation.name,
+				LeaveAllocation.from_date,
+				LeaveAllocation.to_date,
+				LeaveAllocation.carry_forwarded_leaves_count,
+			)
+			.where(
+				((LeaveAllocation.from_date <= date) & (date <= LeaveAllocation.to_date))
+				& (LeaveAllocation.docstatus == 1)
+				& (LeaveAllocation.leave_type == self.leave_type)
+				& (LeaveAllocation.employee == self.employee)
+			)
+		).run(as_dict=True)
+
+		return leave_allocation[0] if leave_allocation else None
 	@frappe.whitelist()
 	def get_leave_details_for_encashment(self):
 		salary_structure = get_assigned_salary_structure(
@@ -84,7 +104,7 @@ class LeaveEncashment_new(Document):
 		if not frappe.db.get_value("Leave Type", self.leave_type, "allow_encashment"):
 			frappe.throw(_("Leave Type {0} is not encashable").format(self.leave_type))
 
-		allocation = LeaveEncashment.get_leave_allocation(self)
+		allocation = self.get_leave_allocation()
 
 		if not allocation:
 			frappe.throw(
@@ -98,7 +118,7 @@ class LeaveEncashment_new(Document):
 		)
 		amount=int(per_day_encashment)
 		amount1=json.dumps(amount)
-		frappe.msgprint("entered overriding")
+		
 		frappe.msgprint("amount per day:"+ amount1)
 		# frappe.msgprint(per_day_encashment)
 		date=frappe.db.get_value(
@@ -106,7 +126,7 @@ class LeaveEncashment_new(Document):
 		)
 		joining_date_str = str(date)
 		joining_date = json.dumps(joining_date_str)
-		frappe.msgprint("joing dat:" +joining_date)
+		frappe.msgprint("joing date:" +joining_date)
 		current_time = getdate(now())
 		curnt_dte = str(current_time)
 		new=json.dumps(curnt_dte)
