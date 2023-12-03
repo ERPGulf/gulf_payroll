@@ -124,7 +124,7 @@ app_license = "mit"
 
 override_doctype_class = {
 	"Gratuity": "gulf_payroll.gulf_payroll.gratuity_new.Gratuity_new",
-    "Leave Encashment": "gulf_payroll.gulf_payroll.Leave Encashment_new.LeaveEncashment_new"
+    "Leave Encashment": "gulf_payroll.gulf_payroll.Leave_encashment_new.LeaveEncashment_new"
 }
 
 override_whitelisted_methods = {
@@ -235,7 +235,6 @@ override_whitelisted_methods = {
 # ]
 
 fixtures=[{ "dt":"Property Setter" ,"filters":[[
-                "name", "in",[
-                    "Leave Allocation-to_date-default","Leave Allocation-from_date-fetch_from"] ]] 
+                "name", "in",["Leave Allocation-to_date-default","Leave Allocation-from_date-fetch_from","Leave Encashment-main-field_order"] ]] 
            }]
 fixtures = [ {"dt": "Custom Field","filters": [["module", "=", "Gulf Payroll"]] }]

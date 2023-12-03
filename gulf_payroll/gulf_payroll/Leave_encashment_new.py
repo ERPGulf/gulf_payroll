@@ -9,23 +9,65 @@ from hrms.hr.doctype.leave_application.leave_application import get_leaves_for_p
 from hrms.hr.doctype.leave_encashment.leave_encashment import LeaveEncashment
 # from hrms.hr.doctype.leave_encashment.leave_encashment import get_leave_allocation
 from hrms.hr.utils import set_employee_name, validate_active_employee
-
+from frappe.utils import add_days, date_diff, flt, formatdate, get_link_to_form, getdate
 from hrms.hr.doctype.leave_ledger_entry.leave_ledger_entry import create_leave_ledger_entry
 from hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignment import (
 	get_assigned_salary_structure,
 )
+from dateutil.relativedelta import relativedelta
+from datetime import datetime, timedelta
 
-
+class OverlapError(frappe.ValidationError):
+	pass
 class LeaveEncashment_new(Document):
 	def validate(self):
 		set_employee_name(self)
 		validate_active_employee(self.employee)
 		self.get_leave_details_for_encashment()
 		LeaveEncashment.validate_salary_structure(self)
+		self.submited_leave_encashment()
+		self.validate_period()
+		
   
 		if not self.encashment_date:
 			self.encashment_date = getdate(nowdate())
-	
+   
+	def validate_period(self):
+		if date_diff(self.custom_to_date, self.custom_from_date) <= 0:
+			frappe.throw(_("To date cannot be before from date"))
+
+	@frappe.whitelist()
+	def submited_leave_encashment(self):
+		doc = frappe.db.sql(
+    """
+    SELECT name 
+    FROM `tabLeave Encashment`
+    WHERE 
+        (custom_from_date BETWEEN %s AND %s) AND 
+        (custom_to_date BETWEEN %s AND %s) AND
+        employee= %s AND docstatus=1
+    """,
+    	(self.custom_from_date,self.custom_to_date,self.custom_from_date,self.custom_to_date,self.employee,)
+)
+		if len(doc)>0:
+			frappe.throw("cant submit")
+		
+		
+		
+		doc = frappe.db.sql(
+    """
+    SELECT name 
+    FROM `tabAttendance`
+    WHERE 
+        (attendance_date BETWEEN %s AND %s) AND 
+        (attendance_date BETWEEN %s AND %s) AND
+        employee= %s AND docstatus=1
+    """,
+    	(self.custom_from_date,self.custom_to_date,self.custom_from_date,self.custom_to_date,self.employee,)
+)
+		if len(doc)==0:
+			frappe.throw("no leaves are allocated")
+ 
 	def on_submit(self):
 		if not self.leave_allocation:
 			self.leave_allocation = self.get_leave_allocation().get("name")
@@ -85,6 +127,7 @@ class LeaveEncashment_new(Document):
 				& (LeaveAllocation.docstatus == 1)
 				& (LeaveAllocation.leave_type == self.leave_type)
 				& (LeaveAllocation.employee == self.employee)
+	
 			)
 		).run(as_dict=True)
 
@@ -112,6 +155,46 @@ class LeaveEncashment_new(Document):
 					self.employee, self.leave_type
 				)
 			)
+		previous_leave_encashment = frappe.get_list(
+			'Leave Encashment',
+            fields=['custom_to_date','custom_from_date'],
+			filters={
+				'employee':self.employee,
+				'docstatus': 1,
+			},
+			order_by='custom_to_date DESC',
+   
+			limit=1
+		)
+		
+
+		if previous_leave_encashment:
+			previous_custom_to_date = previous_leave_encashment[0].get("custom_to_date")
+			
+			if previous_custom_to_date:
+				
+				self.custom_from_date = add_days(previous_custom_to_date, 1)
+
+	
+			if not self.custom_to_date:
+				
+				self.custom_to_date = add_days(self.custom_from_date, 365)
+
+			to_date = self.custom_to_date
+			frappe.msgprint(f"To Date: {to_date}")
+
+			from_date = self.custom_from_date
+			frappe.msgprint(f"From Date: {from_date}")
+
+	
+		else:
+			date=self.custom_from_date
+			date1=str(date)
+			date2=json.dumps(date1)
+			frappe.msgprint(date2)
+			custom_from_date_str = date1
+			self.custom_to_date = add_days(date, 365)
+			frappe.msgprint(f"From Date: {self.custom_to_date}")
 
 		per_day_encashment = frappe.db.get_value(
 			"Salary Structure", salary_structure, "leave_encashment_amount_per_day"
@@ -124,60 +207,112 @@ class LeaveEncashment_new(Document):
 		date=frappe.db.get_value(
 			"Employee",self.employee, "date_of_joining"
 		)
+
 		joining_date_str = str(date)
 		joining_date = json.dumps(joining_date_str)
 		frappe.msgprint("joing date:" +joining_date)
 		current_time = getdate(now())
 		curnt_dte = str(current_time)
-		new=json.dumps(curnt_dte)
+		new = json.dumps(curnt_dte)
 		frappe.msgprint("current date:"+new)
-		total_years = (current_time-date).days // 365
-		tot=int(total_years)
-		years=json.dumps(tot)
-		frappe.msgprint("total years worked:"+years)
+		delta = current_time - date
+		total_days = delta.days
+		var=frappe.db.get_value(
+			    "Leave Encashment",self.employee, "custom_total_leave_taken1"
+		        )
+		joining_date_str1 = str(var)
+		joining_date1 = json.dumps(joining_date_str1)
+		
+		# Calculate the number of years as a floating-point value
+		total_years = total_days / 365.25
+
+		# Display the total years with two decimal places
+		frappe.msgprint(f"Total years worked: {total_years:.1f}")
+
 		var= get_leaves_for_period(
 				self.employee, self.leave_type, allocation.from_date, self.encashment_date
 			)
-		var1=int(var)
+		doc = frappe.db.sql(
+    """
+    SELECT name 
+    FROM `tabAttendance`
+    WHERE 
+        (attendance_date BETWEEN %s AND %s) AND
+        employee = %s AND docstatus = 1
+    """,
+    (self.custom_from_date, self.custom_to_date, self.employee,)
+)
+
+		total_leaves = len(doc)
+		var1=int(total_leaves)
 		var2=json.dumps(var1)
-		frappe.msgprint("total leave taken:" + var2)
+		frappe.msgprint(f"total leavess: {total_leaves}")
+		self.custom_total_leave_taken1=var
+		# frappe.db.set_value('Leave Encashment',self.employee, 'custom_total_leave_taken1',var)
+		if total_years<1:
+			frappe.throw("Leave encashment only applicable to above one year experience")
+		elif 1 <= total_years <= 5:
+			Allocated_leaves = frappe.get_doc('Leave Encashment setting').get('allocated_days') 
+			allocated_int=int(Allocated_leaves)
+			allocated=json.dumps(allocated_int)
+			frappe.msgprint("Allocated leaves:"+allocated)
+
+		# 	# self.leave_balance = (
+		# 	# allocated_int- allocation.carry_forwarded_leaves_count
+		# 	# # adding this because the function returns a -ve number
+		# 	# + get_leaves_for_period(
+		# 	# 	self.employee, self.leave_type, allocation.from_date, self.encashment_date
+		# 	# )
+		# )
+			self.leave_balance=(allocated_int-total_leaves)
+			
 		
-		if total_years < 5:
-			self.leave_balance = (
-			21 - allocation.carry_forwarded_leaves_count
-			# adding this because the function returns a -ve number
-			+ get_leaves_for_period(
-				self.employee, self.leave_type, allocation.from_date, self.encashment_date
-			)
-		)
+			year=365
 			self.encashment_amount = (
-			self.leave_balance *  per_day_encashment if per_day_encashment > 0 else 0
+			(allocated_int/year)*(year-(total_leaves))
 		)
 			total_amount=self.encashment_amount
 			total=int(total_amount)
 			total1=json.dumps(total)
 			frappe.msgprint("total_amount:"+total1)
-		else:
-			self.leave_balance = (
-			28 - allocation.carry_forwarded_leaves_count
-		
-			+ get_leaves_for_period(
-				self.employee, self.leave_type, allocation.from_date, self.encashment_date
-			)
+			encashable_days= (
+			(allocated_int/year)*(year-(total_leaves))
 		)
+			self.encashable_days = encashable_days if encashable_days > 0 else 0
+		else:
+			Allocated_leaves_1 = frappe.get_doc('Leave Encashment setting').get('allocated_dayss') 
+			allocated_int=int(Allocated_leaves_1)
+			allocated1=json.dumps(allocated_int)
+			frappe.msgprint("Allocated leaves:"+allocated1)
+		# 	self.leave_balance = (
+		# 	allocated_int- allocation.carry_forwarded_leaves_count
+		
+		# 	+ get_leaves_for_period(
+		# 		self.employee, self.leave_type, allocation.from_date, self.encashment_date
+		# 	)
+		# )
+			self.leave_balance=(allocated_int-total_leaves)
+			
+			year=365
 			self.encashment_amount = (
-			self.leave_balance *  per_day_encashment if per_day_encashment > 0 else 0
+			(allocated_int/year)*(year-(total_leaves))*per_day_encashment
 		)
 			total_amount=self.encashment_amount
 			total=int(total_amount)
 			total1=json.dumps(total)
 			frappe.msgprint("total_amount:"+total1)
    
-		encashable_days = self.leave_balance - frappe.db.get_value(
-			"Leave Type", self.leave_type, "encashment_threshold_days"
+		# encashable_days = self.leave_balance - frappe.db.get_value(
+		# 	"Leave Type", self.leave_type, "encashment_threshold_days"
+		# )
+		encashable_days= (
+			(allocated_int/year)*(year-(total_leaves))
 		)
 		self.encashable_days = encashable_days if encashable_days > 0 else 0
 
 	
 		self.leave_allocation = allocation.name
 		return True
+	
+
+	

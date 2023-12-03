@@ -1,0 +1,114 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2023-11-22 14:56:18.870715",
+ "default_view": "List",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "current_work_experience_section",
+  "slab_1_column",
+  "allocated_days",
+  "select_xkiu",
+  "column_break_qtlj",
+  "allocated_dayss",
+  "section_break_tkzy",
+  "slab11_column",
+  "experience_1_to_5__yearsallocated_days",
+  "column_break_hvcm",
+  "experience_above_5_years_allocated_days_copy",
+  "deduct_leave_days_from_gratuity"
+ ],
+ "fields": [
+  {
+   "fieldname": "current_work_experience_section",
+   "fieldtype": "Section Break",
+   "label": "Encashment "
+  },
+  {
+   "default": "21",
+   "fieldname": "allocated_days",
+   "fieldtype": "Data",
+   "label": "Experience 1 to 5 years (Allocated days)"
+  },
+  {
+   "fieldname": "column_break_qtlj",
+   "fieldtype": "Column Break",
+   "label": "slab 2"
+  },
+  {
+   "default": "28",
+   "fieldname": "allocated_dayss",
+   "fieldtype": "Data",
+   "label": "Experience above 5 years (Allocated days)"
+  },
+  {
+   "fieldname": "section_break_tkzy",
+   "fieldtype": "Section Break",
+   "label": "Gratuity"
+  },
+  {
+   "fieldname": "select_xkiu",
+   "fieldtype": "Select",
+   "label": "Date",
+   "options": "calendar days\nworking days"
+  },
+  {
+   "fieldname": "column_break_hvcm",
+   "fieldtype": "Column Break",
+   "label": "slab 2"
+  },
+  {
+   "default": "0",
+   "fieldname": "deduct_leave_days_from_gratuity",
+   "fieldtype": "Check",
+   "label": "Deduct leave days from gratuity"
+  },
+  {
+   "fieldname": "slab_1_column",
+   "fieldtype": "Column Break",
+   "label": "slab 1"
+  },
+  {
+   "default": "21",
+   "fieldname": "experience_1_to_5__yearsallocated_days",
+   "fieldtype": "Data",
+   "label": "Experience 1 to 5  years(Allocated days)"
+  },
+  {
+   "default": "28",
+   "fieldname": "experience_above_5_years_allocated_days_copy",
+   "fieldtype": "Data",
+   "label": "Experience above 5 years (Allocated days)"
+  },
+  {
+   "fieldname": "slab11_column",
+   "fieldtype": "Column Break",
+   "label": "slab 1"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2023-11-28 08:06:17.598447",
+ "modified_by": "Administrator",
+ "module": "Gulf Payroll",
+ "name": "Leave Encashment setting",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
