@@ -66,7 +66,11 @@ class LeaveEncashment_new(Document):
     	(self.custom_from_date,self.custom_to_date,self.custom_from_date,self.custom_to_date,self.employee,)
 )
 		if len(doc)==0:
-			frappe.msgprint("No Leaves Allocated to this employee")
+					
+			frappe.msgprint(("No Leaves Allocated to Employee: {0} for Leave  period: {1} to {2}").format(
+					self.employee, self.custom_from_date,self.custom_to_date
+				)
+			)
 					
  
 	def on_submit(self):
@@ -221,12 +225,6 @@ class LeaveEncashment_new(Document):
 		frappe.msgprint("current date:"+new)
 		delta = current_time - date
 		total_days = delta.days
-		var=frappe.db.get_value(
-			    "Leave Encashment",self.employee, "custom_total_leave_taken1"
-		        )
-		joining_date_str1 = str(var)
-		joining_date1 = json.dumps(joining_date_str1)
-		
 		# Calculate the number of years as a floating-point value
 		total_years = total_days / 365.25
 
@@ -251,8 +249,6 @@ class LeaveEncashment_new(Document):
 		var1=int(total_leaves)
 		var2=json.dumps(var1)
 		frappe.msgprint(f"total leavess: {total_leaves}")
-		self.custom_total_leave_taken1=var
-		# frappe.db.set_value('Leave Encashment',self.employee, 'custom_total_leave_taken1',var)
 		if total_years<1:
 			frappe.throw("Leave encashment only applicable to above one year experience")
 		elif 1 <= total_years <= 5:
