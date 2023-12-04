@@ -234,7 +234,7 @@ override_whitelisted_methods = {
 #	"gulf_payroll.auth.validate"
 # ]
 
-# fixtures=[{ "dt":"Property Setter" ,"filters":[[
-#                 "name", "in",["Leave Allocation-to_date-default","Leave Allocation-from_date-fetch_from","Leave Encashment-main-field_order"] ]] 
-#            }]
+fixtures=[{ "dt":"Property Setter" ,"filters":[[
+                "name", "in",["Leave Allocation-to_date-default","Leave Allocation-from_date-fetch_from",] ]] 
+           }]
 fixtures = [ {"dt": "Custom Field","filters": [["module", "=", "Gulf Payroll"]] }]
