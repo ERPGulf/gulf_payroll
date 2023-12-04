@@ -66,7 +66,8 @@ class LeaveEncashment_new(Document):
     	(self.custom_from_date,self.custom_to_date,self.custom_from_date,self.custom_to_date,self.employee,)
 )
 		if len(doc)==0:
-			frappe.throw("no leaves are allocated")
+			frappe.msgprint("No Leaves Allocated to this employee")
+					
  
 	def on_submit(self):
 		if not self.leave_allocation:
@@ -169,6 +170,7 @@ class LeaveEncashment_new(Document):
 		
 
 		if previous_leave_encashment:
+			
 			previous_custom_to_date = previous_leave_encashment[0].get("custom_to_date")
 			
 			if previous_custom_to_date:
@@ -185,9 +187,11 @@ class LeaveEncashment_new(Document):
 
 			from_date = self.custom_from_date
 			frappe.msgprint(f"From Date: {from_date}")
+			
 
 	
 		else:
+			
 			date=self.custom_from_date
 			date1=str(date)
 			date2=json.dumps(date1)
@@ -269,7 +273,7 @@ class LeaveEncashment_new(Document):
 		
 			year=365
 			self.encashment_amount = (
-			(allocated_int/year)*(year-(total_leaves))
+			(allocated_int/year)*(year-(total_leaves))* per_day_encashment
 		)
 			total_amount=self.encashment_amount
 			total=int(total_amount)
