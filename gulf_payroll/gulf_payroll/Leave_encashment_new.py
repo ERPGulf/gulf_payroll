@@ -264,7 +264,19 @@ class LeaveEncashment_new(Document):
 		# 	# 	self.employee, self.leave_type, allocation.from_date, self.encashment_date
 		# 	# )
 		# )
-			self.leave_balance=(allocated_int-total_leaves)
+			leave_type = frappe.db.sql(
+    """
+    SELECT name 
+    FROM `tabAttendance`
+    WHERE 
+        (attendance_date BETWEEN %s AND %s) AND leave_type=%s AND
+        employee = %s AND docstatus = 1
+    """,
+    (self.custom_from_date, self.custom_to_date,self.leave_type,self.employee,)
+)
+			leave_type_leaves=len(leave_type)
+			frappe.msgprint(f"leave type leaves: {leave_type_leaves}")
+			self.leave_balance=(allocated_int-leave_type_leaves)
 			
 		
 			year=365
@@ -280,6 +292,18 @@ class LeaveEncashment_new(Document):
 		)
 			self.encashable_days = encashable_days if encashable_days > 0 else 0
 		else:
+			leave_type = frappe.db.sql(
+    """
+    SELECT name 
+    FROM `tabAttendance`
+    WHERE 
+        (attendance_date BETWEEN %s AND %s) AND leave_type=%s AND
+        employee = %s AND docstatus = 1
+    """,
+    (self.custom_from_date, self.custom_to_date,self.leave_type,self.employee,)
+)
+			leave_type_leaves=len(leave_type)
+			frappe.msgprint(f"leave type leaves: {leave_type_leaves}")
 			Allocated_leaves_1 = frappe.get_doc('Leave Encashment setting').get('allocated_dayss') 
 			allocated_int=int(Allocated_leaves_1)
 			allocated1=json.dumps(allocated_int)
@@ -291,7 +315,7 @@ class LeaveEncashment_new(Document):
 		# 		self.employee, self.leave_type, allocation.from_date, self.encashment_date
 		# 	)
 		# )
-			self.leave_balance=(allocated_int-total_leaves)
+			self.leave_balance=(allocated_int-leave_type_leaves)
 			
 			year=365
 			self.encashment_amount = (

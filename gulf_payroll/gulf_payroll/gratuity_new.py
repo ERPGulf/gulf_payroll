@@ -20,10 +20,11 @@ from hrms.payroll.doctype.salary_structure_assignment.salary_structure_assignmen
 	get_assigned_salary_structure,
 )
 from frappe.model.document import Document
+from datetime import datetime
 class Gratuity_new(AccountsController):
     def validate(self):
         data = calculate_work_experience_and_amount(self.employee, self.gratuity_rule)
-        self.custom_work_experience = data["current_work_experience"]
+        self.custom_work_experience = calculating_experience(self.employee)
         self.amount = data["amount"]
         self.set_status()
         
@@ -42,22 +43,20 @@ def calculate_work_experience_and_amount(employee, gratuity_rule):
     relieving_date=frappe.db.get_value(
 			"Employee",employee, "relieving_date"
 		)
+    
+    
+    
     if not relieving_date :
             frappe.throw(
 			_("Please set relieving date for employee: {0}").format(
 				bold(get_link_to_form("Employee", employee))
 			)
 		)
-    delta = relieving_date - date
-    total_days = delta.days
+    total_experience_in_years=calculating_experience(employee)
+    
+    gratuity_amount =calculate_gratuity_amount(employee, total_experience_in_years ) or 0
 
-		# Calculate the number of years as a floating-point value
-    total_years = total_days / 365
-    total_years1=round(total_years, 9)
-    current_work_experience =total_years
-    gratuity_amount =calculate_gratuity_amount(employee, current_work_experience) or 0
-
-    return {"current_work_experience": current_work_experience, "amount": gratuity_amount}
+    return {"current_work_experience":total_experience_in_years , "amount": gratuity_amount}
 
 def calculate_gratuity_amount(employee,experience):
        
@@ -91,22 +90,23 @@ def calculate_amount_based_on_current_slab(self,employee):
         one_day= data / 30
         one_day2=json.dumps(one_day)
         frappe.msgprint("one day salary:" +one_day2)
+        joining_date=str(date)
+        
+        joining_date1 = json.dumps(joining_date)
+      
         relieving_dte = str(relieving_date)
         new = json.dumps(relieving_dte)
-        frappe.msgprint("relieving date:"+new)
-        delta = relieving_date - date
-        total_days = delta.days
+        
+         # Convert string dates to datetime objects
+        
 
-		# Calculate the number of years as a floating-point value
-        total_years = total_days / 365
-        total_years1=round(total_years, 9)
-        total=json.dumps(total_years1)
-		# Display the total years with two decimal places
-        frappe.msgprint("work experience:"+total)
+# Function to calculate the difference in months between two dates
+        total_experience_in_years=calculating_experience(employee)
+
         deduct = frappe.get_doc('Leave Encashment setting').get('deduct_leave_days_from_gratuity')
-        if total_years1<1:
+        if  total_experience_in_years<1:
             frappe.throw("gratuity only applicable to above one year experience")
-        if total_years1 >= 5:
+        if  total_experience_in_years >= 5:
             Allocated_leaves_1 = frappe.get_doc('Leave Encashment setting').get('allocated_dayss') 
             allocated_int1=int(Allocated_leaves_1)
             allocated1=json.dumps(allocated_int1)
@@ -123,8 +123,8 @@ def calculate_amount_based_on_current_slab(self,employee):
                 total_leaves2=json.dumps(total_leaves1)
                 frappe.msgprint("total leaves:"+total_leaves2)
 
-                year=total_years*365
-                alocate_total=total_years*allocated_int1
+                year=total_experience_in_years*365
+                alocate_total=total_experience_in_years*allocated_int1
                 salary_structure = get_assigned_salary_structure(
 			    employee, relieving_date or getdate(nowdate())
 		        )
@@ -139,7 +139,7 @@ def calculate_amount_based_on_current_slab(self,employee):
 		        )
             else:
                 gratuity_amount = (
-                allocated_int1 * total_years1 * one_day
+                allocated_int1 *  total_experience_in_years * one_day
                 
                  )
 
@@ -151,7 +151,7 @@ def calculate_amount_based_on_current_slab(self,employee):
             frappe.msgprint("Allocated leaves:"+allocated)
 
             gratuity_amount = (
-            allocated_int *total_years1* one_day
+            allocated_int * total_experience_in_years* one_day
             )
             if deduct:
                 
@@ -165,8 +165,8 @@ def calculate_amount_based_on_current_slab(self,employee):
                 total_leaves2=json.dumps(total_leaves1)
                 frappe.msgprint("total leaves:"+total_leaves2)
 
-                year=total_years*365
-                alocate_total=total_years*allocated_int
+                year= total_experience_in_years*365
+                alocate_total= total_experience_in_years*allocated_int
                 salary_structure = get_assigned_salary_structure(
 			    employee, relieving_date or getdate(nowdate())
 		        )
@@ -182,4 +182,68 @@ def calculate_amount_based_on_current_slab(self,employee):
        
             
         return  gratuity_amount
+def calculating_experience(employee):
+        def month_diff(d1, d2):
+                m = (d1.year - d2.year) * 12 + (d1.month - d2.month)
+                if d1.day < d2.day:
+                    m -= 1
+                return m
 
+    # Function to check if a date is within a given range
+        def date_check(from_date, to_date, check_date):
+                if from_date <= check_date <= to_date:
+                    return True
+                return False
+
+# List of experiences
+        date=frappe.db.get_value(
+			"Employee",employee, "date_of_joining"
+		)
+        relieving_date=frappe.db.get_value(
+			"Employee",employee, "relieving_date"
+		)
+        joining_date=str(date)
+        joining_date1 = json.dumps(joining_date)
+        frappe.msgprint("joining date:"+joining_date)
+        relieving_dte = str(relieving_date)
+        new = json.dumps(relieving_dte)
+        frappe.msgprint("relieving date:"+relieving_dte)
+        experiences = [
+            {'begin': joining_date, 'end': relieving_dte},
+           
+            # Add more experiences as needed
+        ]
+
+        # Calculate years of experience without using a separate function
+        if not experiences:
+            result = 0
+        else:
+            months = 0
+            now = datetime.now()
+            sorted_experiences = sorted(experiences, key=lambda x: datetime.strptime(x['begin'], "%Y-%m-%d"))
+            begin = None
+            end = None
+
+            for exp in sorted_experiences:
+                if not exp['end']:
+                    exp['end'] = now.strftime("%Y-%m-%d")
+
+                dif = 0
+                if not end and not begin:
+                    dif = month_diff(datetime.strptime(exp['begin'], "%Y-%m-%d"), datetime.strptime(exp['end'], "%Y-%m-%d"))
+                    begin = exp['begin']
+                    end = exp['end']
+                elif not date_check(datetime.strptime(begin, "%Y-%m-%d"), datetime.strptime(end, "%Y-%m-%d"), datetime.strptime(exp['begin'], "%Y-%m-%d")) and not date_check(datetime.strptime(begin, "%Y-%m-%d"), datetime.strptime(end, "%Y-%m-%d"), datetime.strptime(exp['end'], "%Y-%m-%d")):
+                    dif = month_diff(datetime.strptime(exp['begin'], "%Y-%m-%d"), datetime.strptime(exp['end'], "%Y-%m-%d"))
+                    end = exp['end']
+                elif date_check(datetime.strptime(begin, "%Y-%m-%d"), datetime.strptime(end, "%Y-%m-%d"), datetime.strptime(exp['begin'], "%Y-%m-%d")):
+                    dif = month_diff(datetime.strptime(end, "%Y-%m-%d"), datetime.strptime(exp['end'], "%Y-%m-%d"))
+                    end = exp['end']
+
+                months += dif
+
+            result = months / 12
+            total_experience_in_years=(-result)
+           
+        return total_experience_in_years
+       
