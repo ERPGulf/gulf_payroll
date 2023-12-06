@@ -241,7 +241,6 @@ def calculating_experience(employee):
                     end = exp['end']
 
                 months += dif
-
             result = months / 12
             total_experience_in_years=(-result)
            
