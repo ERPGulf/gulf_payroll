@@ -155,7 +155,20 @@ class LeaveEncashment_new(Document):
    
 			limit=1
 		)
-		frappe.msgprint(f"From Date: {previous_leave_encashment}")
+		# frappe.msgprint(f"previous leave encashment: {previous_leave_encashment}")
+		previous_leave_encashment_name = frappe.get_list(
+			'Leave Encashment',
+            fields=['name'],
+			filters={
+				'employee':self.employee,
+				'docstatus': 1,
+				'leave_type':self.leave_type
+			},
+			order_by='custom_to_date DESC',
+   
+			limit=1
+		)
+		frappe.msgprint(f"previous leave encashment: {previous_leave_encashment_name}")
 		
 		doc = frappe.db.sql(
     """
@@ -183,7 +196,8 @@ class LeaveEncashment_new(Document):
 		else:
 			frappe.msgprint("already leaves allocated")
 			previous_custom_to_date = previous_leave_encashment[0].get("custom_to_date")
-			self.custom_from_date = add_days(previous_custom_to_date, 1)
+			if not self.custom_from_date:
+				self.custom_from_date = add_days(previous_custom_to_date, 1)
 
             # If custom_to_date is not set, default to one year from custom_from_date
 			if not self.custom_to_date:
@@ -191,8 +205,14 @@ class LeaveEncashment_new(Document):
 				curent_to_date=self.custom_to_date
 				date_to=str(curent_to_date)
 			if date_diff(self.custom_to_date,previous_custom_to_date) <= 0:
-				frappe.throw("<b>To date</b> must not precede the previously submitted <b>To date</b>.")
+				name=previous_leave_encashment_name[0].get("name")
 				
+				frappe.throw(
+				_("Unable to make a submission as the period from {0} to {1} comes before the date when the leave encashment was previously submitted. Reference:{2}. ").format(
+					self.custom_from_date, self.custom_to_date,name
+				)
+			)
+			
 			to_date = self.custom_to_date
 			frappe.msgprint(f"To Date: {to_date}")
 			from_date = self.custom_from_date
