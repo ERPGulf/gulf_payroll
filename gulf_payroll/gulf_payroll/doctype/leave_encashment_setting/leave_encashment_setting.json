@@ -13,6 +13,7 @@
   "select_xkiu",
   "column_break_qtlj",
   "allocated_dayss",
+  "basic_salary_per_day",
   "section_break_tkzy",
   "slab11_column",
   "experience_1_to_5__yearsallocated_days",
@@ -86,12 +87,18 @@
    "fieldname": "slab11_column",
    "fieldtype": "Column Break",
    "label": "slab 1"
+  },
+  {
+   "default": "0",
+   "fieldname": "basic_salary_per_day",
+   "fieldtype": "Check",
+   "label": "Basic salary per day"
   }
  ],
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2023-11-28 08:06:17.598447",
+ "modified": "2024-01-12 08:58:07.784979",
  "modified_by": "Administrator",
  "module": "Gulf Payroll",
  "name": "Leave Encashment setting",

@@ -275,8 +275,21 @@ class LeaveEncashment_new(Document):
 		""",
     	(self.custom_from_date, self.custom_to_date,self.leave_type,self.employee,)
 		)
+		base_amount=frappe.db.get_list("Salary Structure Assignment",fields=["base"],filters={'salary_structure': ['like', f'{salary_structure}']})
+		for base_amount1 in base_amount:
+			base=base_amount1.get("base")
+			base1 = int(base)
+			base2 = json.dumps(base1)	
+			frappe.msgprint(base2)
+		frappe.msgprint("monthly salary:" +base2)
+		one_day= base1 / 30
+		one_day2=json.dumps(one_day)
+		frappe.msgprint("one day salary:" +one_day2)
+                  
+		
 		leave_type_leaves=len(leave_type)
 		frappe.msgprint(f"leave type leaves: {leave_type_leaves}")
+		basic_salary = frappe.get_doc('Leave Encashment setting').get('basic_salary_per_day')
 		if total_years<1:
 			frappe.throw("Leave encashment only applicable to above one year experience")
 		elif 1 <= total_years <= 5:
@@ -284,23 +297,27 @@ class LeaveEncashment_new(Document):
 			allocated_int=int(Allocated_leaves)
 			allocated=json.dumps(allocated_int)
 			frappe.msgprint("Allocated leaves:"+allocated)
-
-	
 			self.leave_balance=(allocated_int-leave_type_leaves)
-			
-		
 			year=365
-			self.encashment_amount = (
-			(allocated_int/year)*(year-(total_leaves))* per_day_encashment
-		)
-			total_amount=self.encashment_amount
-			total=int(total_amount)
-			total1=json.dumps(total)
-			frappe.msgprint("total_amount:"+total1)
 			encashable_days= (
 			(allocated_int/year)*(year-(total_leaves))
 		)
 			self.encashable_days = encashable_days if encashable_days > 0 else 0
+			if basic_salary:
+				self.encashment_amount = (
+				(allocated_int/year)*(year-(total_leaves))*one_day)
+				total_amount=self.encashment_amount
+				total=int(total_amount)
+				total1=json.dumps(total)
+				frappe.msgprint("total_amount:"+total1)
+			else:
+				self.encashment_amount = (
+				(allocated_int/year)*(year-(total_leaves))*per_day_encashment)
+				total_amount=self.encashment_amount
+				total=int(total_amount)
+				total1=json.dumps(total)
+				frappe.msgprint("total_amount:"+total1)
+			
 		else:
 			Allocated_leaves_1 = frappe.get_doc('Leave Encashment setting').get('allocated_dayss') 
 			allocated_int=int(Allocated_leaves_1)
@@ -310,21 +327,24 @@ class LeaveEncashment_new(Document):
 			self.leave_balance=(allocated_int-leave_type_leaves)
 			
 			year=365
-			self.encashment_amount = (
-			(allocated_int/year)*(year-(total_leaves))*per_day_encashment
-		)
-			total_amount=self.encashment_amount
-			total=int(total_amount)
-			total1=json.dumps(total)
-			frappe.msgprint("total_amount:"+total1)
-   
-		
 		encashable_days= (
 			(allocated_int/year)*(year-(total_leaves))
 		)
 		self.encashable_days = encashable_days if encashable_days > 0 else 0
-
-	
+		if basic_salary:
+				self.encashment_amount = (
+				(allocated_int/year)*(year-(total_leaves))*one_day)
+				total_amount=self.encashment_amount
+				total=int(total_amount)
+				total1=json.dumps(total)
+				frappe.msgprint("total_amount:"+total1)
+		else:
+				self.encashment_amount = (
+				(allocated_int/year)*(year-(total_leaves))*per_day_encashment)
+				total_amount=self.encashment_amount
+				total=int(total_amount)
+				total1=json.dumps(total)
+				frappe.msgprint("total_amount:"+total1)
 		self.leave_allocation = allocation.name
 		return True
 	
