@@ -155,7 +155,7 @@ class LeaveEncashment_new(Document):
    
 			limit=1
 		)
-		# frappe.msgprint(f"previous leave encashment: {previous_leave_encashment}")
+		frappe.msgprint(f"previous leave encashment: {previous_leave_encashment}")
 		previous_leave_encashment_name = frappe.get_list(
 			'Leave Encashment',
             fields=['name'],
@@ -181,44 +181,46 @@ class LeaveEncashment_new(Document):
     """,
     	(self.custom_from_date,self.custom_to_date,self.employee,)
 		)
-		if len(doc)>0:
-			frappe.throw("leave encashment already submitted for this period")
-		if previous_leave_encashment[0].get("custom_from_date") is None and previous_leave_encashment[0].get("custom_to_date") is None  :
-			frappe.msgprint("no leave encashment")
-			date = self.custom_from_date
-			frappe.msgprint(f"From Dateeeee: {date}")
-
-            # Set custom_to_date to one year from custom_from_date
-			self.custom_to_date = add_days(date, 365)
-			frappe.msgprint(f"To Date: {self.custom_to_date}")
-
-		
-		else:
-			frappe.msgprint("already leaves allocated")
-			previous_custom_to_date = previous_leave_encashment[0].get("custom_to_date")
-			if not self.custom_from_date:
-				self.custom_from_date = add_days(previous_custom_to_date, 1)
-
-            # If custom_to_date is not set, default to one year from custom_from_date
-			if not self.custom_to_date:
-				self.custom_to_date = add_days(self.custom_from_date, 365)
-				curent_to_date=self.custom_to_date
-				date_to=str(curent_to_date)
-			if date_diff(self.custom_to_date,previous_custom_to_date) <= 0:
-				name=previous_leave_encashment_name[0].get("name")
-				
-				frappe.throw(
-				_("Unable to make a submission as the period from {0} to {1} comes before the date when the leave encashment was previously submitted. Reference:{2}. ").format(
-					self.custom_from_date, self.custom_to_date,name
-				)
-			)
+		if len(previous_leave_encashment) > 0:
+			frappe.msgprint(str(len(previous_leave_encashment)))
 			
-			to_date = self.custom_to_date
-			frappe.msgprint(f"To Date: {to_date}")
-			from_date = self.custom_from_date
-			frappe.msgprint(f"From Date: {from_date}")
+
+			previous_custom_from_date = previous_leave_encashment[0].get("custom_from_date")
+			previous_custom_to_date = previous_leave_encashment[0].get("custom_to_date")
+			if not previous_custom_from_date and not previous_custom_to_date:
+				frappe.msgprint("no leave encashment")
+				date = self.custom_from_date
+				frappe.msgprint(f"From Date: {date}")
+				self.custom_to_date = add_days(date, 365)
+				frappe.msgprint(f"To Date: {self.custom_to_date}")
+
 		
-            # If no previous leave encashment record, use existing custom_from_date
+			else:
+				frappe.msgprint("already leaves allocated")
+				previous_custom_to_date = previous_leave_encashment[0].get("custom_to_date")
+				if not self.custom_from_date:
+					self.custom_from_date = add_days(previous_custom_to_date, 1)
+
+				# If custom_to_date is not set, default to one year from custom_from_date
+				if not self.custom_to_date:
+					self.custom_to_date = add_days(self.custom_from_date, 365)
+					curent_to_date=self.custom_to_date
+					date_to=str(curent_to_date)
+				if date_diff(self.custom_to_date,previous_custom_to_date) <= 0:
+					name=previous_leave_encashment_name[0].get("name")
+					
+					frappe.throw(
+					_("Unable to make a submission as the period from {0} to {1} comes before the date when the leave encashment was previously submitted. Reference:{2}. ").format(
+						self.custom_from_date, self.custom_to_date,name
+					)
+				)
+				
+				to_date = self.custom_to_date
+				frappe.msgprint(f"To Date: {to_date}")
+				from_date = self.custom_from_date
+				frappe.msgprint(f"From Date: {from_date}")
+		
+			# If no previous leave encashment record, use existing custom_from_date
 		
 		per_day_encashment = frappe.db.get_value(
 			"Salary Structure", salary_structure, "leave_encashment_amount_per_day"
@@ -228,6 +230,10 @@ class LeaveEncashment_new(Document):
 		
 		frappe.msgprint("amount per day:"+ amount1)
 		# frappe.msgprint(per_day_encashment)
+		date = self.custom_from_date
+		frappe.msgprint(f"From Date: {date}")
+		if not self.custom_to_date:
+			self.custom_to_date = add_days(date, 365)
 		date=frappe.db.get_value(
 			"Employee",self.employee, "date_of_joining"
 		)
@@ -275,16 +281,16 @@ class LeaveEncashment_new(Document):
 		""",
     	(self.custom_from_date, self.custom_to_date,self.leave_type,self.employee,)
 		)
-		base_amount=frappe.db.get_list("Salary Structure Assignment",fields=["base"],filters={'salary_structure': ['like', f'{salary_structure}']})
+		base_amount=frappe.db.get_list("Salary Structure Assignment",fields=["base"],filters={'salary_structure': ['like', f'{salary_structure}'],'docstatus':['like',1]})
 		for base_amount1 in base_amount:
 			base=base_amount1.get("base")
 			base1 = int(base)
 			base2 = json.dumps(base1)	
 			frappe.msgprint(base2)
-		frappe.msgprint("monthly salary:" +base2)
+		
 		one_day= base1 / 30
 		one_day2=json.dumps(one_day)
-		frappe.msgprint("one day salary:" +one_day2)
+		frappe.msgprint("one day salaryy:" +one_day2)
                   
 		
 		leave_type_leaves=len(leave_type)
